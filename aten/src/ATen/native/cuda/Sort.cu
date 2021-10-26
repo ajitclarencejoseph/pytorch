@@ -415,11 +415,8 @@ std::tuple<Tensor &,Tensor &> sort_out_stable_cuda(const Tensor & self, c10::opt
   int64_t numel_or_intmax = std::min(numel, static_cast<int64_t>(std::numeric_limits<int>::max()));
   int64_t nbatch = (numel_or_intmax / nsort) * nsort;
 
-#ifdef __HIP_PLATFORM_HCC__
-  constexpr bool is_rocm = true;
-#else
+  //TODO: remove the is_rocm variable
   constexpr bool is_rocm = false;
-#endif
 
   AT_DISPATCH_ALL_TYPES_AND3(kBool, kHalf, kBFloat16, self_.scalar_type(), "sort", [&]{
     c10::guts::if_constexpr<!(is_rocm && std::is_same<scalar_t, c10::BFloat16>::value)>([&](auto _){

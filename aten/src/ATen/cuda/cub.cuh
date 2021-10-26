@@ -31,6 +31,7 @@
 
 #ifdef __HIP_PLATFORM_HCC__
 #define NO_ROCM(x)
+#define TO_ROCM_HIP_CUB(x) ::hipcub
 #else
 #define NO_ROCM(x) x
 
@@ -39,6 +40,30 @@ namespace at { namespace native {
 namespace cub = at::cuda::detail::cub;
 
 }}
+#endif
+
+#if defined(__HIP_PLATFORM_HCC__)
+
+// backport https://github.com/NVIDIA/cub/pull/306 for c10::BFloat16
+template <>
+struct ::hipcub::FpLimits<c10::BFloat16>
+{
+    static __host__ __device__ __forceinline__ c10::BFloat16 Max() {
+        unsigned short max_word = 0x7F7F;
+        return reinterpret_cast<c10::BFloat16&>(max_word);
+    }
+
+    static __host__ __device__ __forceinline__ c10::BFloat16 Lowest() {
+        unsigned short lowest_word = 0xFF7F;
+        return reinterpret_cast<c10::BFloat16&>(lowest_word);
+    }
+};
+
+//template <> struct ::hipcub::NumericTraits<c10::BFloat16>: ::hipcub::BaseTraits<::hipcub::FLOATING_POINT, true, false, unsigned short, c10::BFloat16> {};
+template <>
+struct ::hipcub::NumericTraits<c10::BFloat16>:
+       ::hipcub::BaseTraits<::hipcub::FLOATING_POINT, true, false, unsigned short, c10::BFloat16> {};
+
 #endif
 
 namespace at {
